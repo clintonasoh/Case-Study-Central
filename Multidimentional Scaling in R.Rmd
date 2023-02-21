@@ -1,0 +1,71 @@
+---
+title: "Multidimentional Scaling in R"
+Author: Adapted from R-bloggers
+output:
+  html_document:
+    df_print: paged
+  pdf_document: default
+---
+
+This page shows Multidimensional Scaling (MDS) with R. It demonstrates with an example of automatic layout of Australian cities based on distances between them. The layout obtained with MDS is very close to their locations on a map.
+
+```{r}
+plot(cars)
+```
+
+At first, the data of distances between 8 city in Australia are loaded from http://rosetta.reltech.org/TC/v15/Mapping/data/dist-Aus.csv.
+
+```{r}
+dist.au <- read.csv("http://rosetta.reltech.org/TC/v15/Mapping/data/dist-Aus.csv")
+```
+
+Then we remove the frist column, acronyms of cities, and set them to row names.
+
+```{r}
+row.names(dist.au) <- dist.au[, 1]
+dist.au <- dist.au[, -1]
+dist.au
+```
+
+After that, we run Multidimensional Scaling (MDS) with function `cmdscale()`, and get x and y coordinates.
+
+```{r}
+fit <- cmdscale(dist.au, eig = TRUE, k = 2)
+x <- fit$points[, 1]
+y <- fit$points[, 2]
+```
+
+Then we visualise the result, which shows the positions of cities are very close to their relative locations on a map.
+
+```{r}
+plot(x, y, pch = 19, xlim = range(x) + c(0, 600))
+city.names <- c("Adelaide", "Alice Springs", "Brisbane", "Darwin", "Hobart", 
+    "Melbourne", "Perth", "Sydney")
+text(x, y, pos = 4, labels = city.names)
+```
+
+By flipping both x- and y-axis, Darwin and Brisbane are moved to the top (north), which makes it easier to compare with a map.
+
+```{r}
+x <- 0 - x
+y <- 0 - y
+plot(x, y, pch = 19, xlim = range(x) + c(0, 600))
+text(x, y, pos = 4, labels = city.names)
+```
+
+MDS is also implemented in the `igraph` package as `layout.mds`.
+
+```{r}
+library(igraph)
+g <- graph.full(nrow(dist.au))
+V(g)$label <- city.names
+layout <- layout.mds(g, dist = as.matrix(dist.au))
+plot(g, layout = layout, vertex.size = 3)
+```
+
+
+
+
+
+
+
