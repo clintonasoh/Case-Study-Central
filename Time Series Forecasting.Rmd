@@ -1,0 +1,152 @@
+---
+title: "Time Series Forecast of Airline Ticket Sales"
+output:
+  html_document:
+    df_print: paged
+---
+## Objective: 
+To predict the airline tickets' sales of 1961 using Time Series Analysis.
+
+## Data Description:
+10 year air-ticket sales data of airline industry from 1949-1960
+
+
+
+```{r}
+#Install and load parkages
+#install.packages("forecast")
+#install.packages("tseries")
+```
+
+```{r}
+library(forecast)
+library(tseries)
+```
+
+#### Exploratory Data Analysis
+```{r}
+data("AirPassengers")
+class(AirPassengers)
+```
+
+```{r}
+start(AirPassengers)
+end(AirPassengers)
+frequency(AirPassengers)
+```
+
+```{r}
+sum(is.na(AirPassengers))
+
+```
+
+```{r}
+summary(AirPassengers)
+AirPassengers
+```
+
+
+
+### INSIGHTS
+1. **Trend**: The passenger numbers increase over time indicating an increasing linear trend.
+2. **Seasonality**: In the boxplot, there are more passengers travelling in months 6 to 9, indicating seasonality with an apparent cycle of 12 months.
+
+## Decomposing Time Series into its components
+
+```{r}
+tsdata<-ts(AirPassengers, frequency = 12)
+ddata <- decompose(tsdata, "multiplicative")
+```
+
+```{r}
+plot(ddata)
+
+```
+
+#### trend component
+```{r}
+plot(ddata$trend)
+```
+
+#### seasonality component
+```{r}
+plot(ddata$seasonal)
+
+```
+
+#### Irregularity component
+```{r}
+plot(ddata$random)
+```
+
+#### Plotting components together
+
+```{r}
+plot(AirPassengers)
+abline(reg = lm(AirPassengers~time(AirPassengers)))
+cycle(AirPassengers)
+```
+
+#### Boxplot by cycle
+```{r}
+boxplot(AirPassengers~cycle(AirPassengers, xlab="Date"))
+
+```
+
+#### Test for Stationarity
+```{r}
+plot(AirPassengers)
+
+```
+
+#### Find the best ARIMA Model
+```{r}
+mymodel <- auto.arima(AirPassengers)
+mymodel
+```
+
+
+#### Run best model with `trace` to compare the information criteria
+```{r}
+auto.arima(AirPassengers, ic="aic", trace=TRUE)
+
+```
+
+-- #adf.test(mymodel)
+
+## Checking residuals which shows stationarity
+```{r}
+plot.ts(mymodel$residuals)
+
+```
+
+#### Plot Autocorrelation Function (ACF) and Partial ACF
+```{r}
+acf(ts(mymodel$residuals), main="ACF Residual")
+pacf(ts(mymodel$residuals), main="PACF Residual")
+
+```
+
+### Forecast for the next 10 years
+```{r}
+myforecast<-forecast(mymodel, level=c(95), h=10*12)
+plot(myforecast)
+```
+
+
+### Validating the findings of the ARIMA model 
+```{r}
+Box.test(mymodel$resid, lag=5, type="Ljung-Box")
+Box.test(mymodel$resid, lag=10, type="Ljung-Box")
+Box.test(mymodel$resid, lag=15, type="Ljung-Box")
+```
+
+
+### Results
+The p-values are quite insignificant, indicating that the model is free of autocorrelation.
+
+### Conclusion
+From the ARIMA output, the model using (2,1,1) has been shown to adequately fit the data. 
+
+
+
